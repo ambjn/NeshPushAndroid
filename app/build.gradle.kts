@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
-    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -26,8 +25,7 @@ android {
         val env = Properties().apply {
             rootProject.file(".env").takeIf { it.exists() }?.inputStream()?.use { load(it) }
         }
-        buildConfigField("String", "SUPABASE_URL", "\"${env.getProperty("SUPABASE_URL", "")}\"")
-        buildConfigField("String", "SUPABASE_KEY", "\"${env.getProperty("SUPABASE_KEY", "")}\"")
+        buildConfigField("String", "API_BASE_URL", "\"${env.getProperty("API_BASE_URL", "")}\"")
     }
 
     buildTypes {
@@ -64,9 +62,6 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
-    implementation(platform(libs.supabase.bom))
-    implementation(libs.supabase.postgrest)
-    implementation(libs.ktor.client.android)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

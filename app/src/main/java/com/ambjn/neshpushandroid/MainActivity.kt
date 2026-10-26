@@ -10,18 +10,25 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ambjn.neshpushandroid.auth.AuthViewModel
 import com.ambjn.neshpushandroid.auth.SignInScreen
+import com.ambjn.neshpushandroid.push.DeviceRegistrar
 import com.ambjn.neshpushandroid.push.PushService
+import kotlinx.coroutines.launch
 import com.ambjn.neshpushandroid.ui.theme.NeshPushAndroidTheme
 
 class MainActivity : ComponentActivity() {
-    private val askNotifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    private val askNotifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        // Permission state changed: re-register so the server records it.
+        lifecycleScope.launch { DeviceRegistrar.register(this@MainActivity) }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,6 +44,8 @@ class MainActivity : ComponentActivity() {
                 val loading by vm.loading.collectAsState()
                 val error by vm.error.collectAsState()
                 val context = LocalContext.current
+                val registration by DeviceRegistrar.state.collectAsState()
+                LaunchedEffect(user?.uid) { if (user != null) DeviceRegistrar.register(context) }
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     // Auth gate: the auth-state flow drives the redirect, so there is no
                     // back stack to leak between signed-in and signed-out screens.
@@ -51,6 +60,7 @@ class MainActivity : ComponentActivity() {
                     } else {
                         HomeScreen(
                             user = u,
+                            registration = registration,
                             onSignOut = { vm.signOut(context) },
                             modifier = Modifier.padding(innerPadding),
                         )

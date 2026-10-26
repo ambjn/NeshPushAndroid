@@ -6,18 +6,29 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.ambjn.neshpushandroid.R
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 class PushService : FirebaseMessagingService() {
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** Token rotated: re-register if signed in. DeviceRegistrar reads the current token itself. */
     override fun onNewToken(token: String) {
-        // ponytail: token only logged; POST it to your backend here once an endpoint exists.
-        Log.i(TAG, "FCM token: $token")
+        scope.launch { DeviceRegistrar.register(applicationContext) }
+    }
+
+    override fun onDestroy() {
+        scope.cancel()
+        super.onDestroy()
     }
 
     /** Called for data messages, and for notification messages while the app is in the foreground. */
@@ -28,8 +39,6 @@ class PushService : FirebaseMessagingService() {
     }
 
     companion object {
-        private const val TAG = "PushService"
-
         fun ensureChannel(context: Context) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
             val nm = context.getSystemService(NotificationManager::class.java)
