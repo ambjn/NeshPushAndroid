@@ -14,23 +14,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ambjn.neshpushandroid.push.DeviceRegistrar
-import com.ambjn.neshpushandroid.push.Routes
 import com.google.firebase.auth.FirebaseUser
 
 @Composable
-fun HomeScreen(
-    user: FirebaseUser,
-    registration: DeviceRegistrar.State,
-    route: String,
-    onNavigateHome: () -> Unit,
-    onSignOut: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    if (route == Routes.DETAILS) {
-        DetailsScreen(onBack = onNavigateHome, modifier = modifier)
-        return
-    }
-
+fun HomeScreen(user: FirebaseUser, registration: DeviceRegistrar.State, onSignOut: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -44,29 +31,13 @@ fun HomeScreen(
         Spacer(Modifier.height(32.dp))
         Text(
             when (registration) {
-                DeviceRegistrar.State.Registered -> "Push registered"
-                DeviceRegistrar.State.Failed -> "Push registration failed; will retry on next launch"
-                DeviceRegistrar.State.Pending -> "Registering push…"
+                DeviceRegistrar.State.Registered -> "Ready to receive notifications"
+                DeviceRegistrar.State.Failed -> "Registration failed; will retry on next launch"
+                DeviceRegistrar.State.Pending -> "Registering…"
             },
             style = MaterialTheme.typography.bodySmall,
         )
         Spacer(Modifier.height(32.dp))
         OutlinedButton(onClick = onSignOut) { Text("Sign out") }
-    }
-}
-
-/** Second allowlisted route. Reached only via a push tap carrying route_key=details. */
-@Composable
-fun DetailsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text("Details", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(8.dp))
-        Text("Opened from a push notification.", style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.height(32.dp))
-        OutlinedButton(onClick = onBack) { Text("Back to home") }
     }
 }

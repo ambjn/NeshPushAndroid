@@ -21,12 +21,18 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 class PushService : FirebaseMessagingService() {
-
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    /** Token rotated: re-register if signed in. DeviceRegistrar reads the current token itself. */
+    /** Token rotated: re-register if signed in. */
     override fun onNewToken(token: String) {
-        scope.launch { DeviceRegistrar.register(applicationContext) }
+        scope.launch { DeviceRegistrar.register() }
+    }
+
+    /** Foreground delivery (in the background the system shows the notification itself). */
+    override fun onMessageReceived(message: RemoteMessage) {
+        val title = message.notification?.title ?: message.data["title"] ?: getString(R.string.app_name)
+        val body = message.notification?.body ?: message.data["body"] ?: return
+        showNotification(this, title, body)
     }
 
     override fun onDestroy() {
@@ -34,52 +40,32 @@ class PushService : FirebaseMessagingService() {
         super.onDestroy()
     }
 
-    /**
-     * The server sends data-only messages, so this runs in every app state and exactly one
-     * banner is shown. send_id and route_key ride along for tap reporting and routing.
-     */
-    override fun onMessageReceived(message: RemoteMessage) {
-        val title = message.data["title"] ?: message.notification?.title ?: getString(R.string.app_name)
-        val body = message.data["body"] ?: message.notification?.body ?: return
-        showNotification(this, title, body, message.data["send_id"], message.data["route_key"])
-    }
-
     companion object {
         fun ensureChannel(context: Context) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-            val nm = context.getSystemService(NotificationManager::class.java)
-            nm.createNotificationChannel(
-                NotificationChannel(
-                    context.getString(R.string.push_channel_id),
-                    context.getString(R.string.push_channel_name),
-                    NotificationManager.IMPORTANCE_HIGH,
-                )
+            context.getSystemService(NotificationManager::class.java).createNotificationChannel(
+                NotificationChannel(context.getString(R.string.push_channel_id), context.getString(R.string.push_channel_name), NotificationManager.IMPORTANCE_HIGH)
             )
         }
 
-        const val EXTRA_SEND_ID = "send_id"
-        const val EXTRA_ROUTE_KEY = "route_key"
-
-        fun showNotification(context: Context, title: String, body: String, sendId: String?, routeKey: String?) {
+        fun showNotification(context: Context, title: String, body: String) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                 ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
             ) return
             ensureChannel(context)
-            val requestCode = sendId?.hashCode() ?: System.currentTimeMillis().toInt()
-            val tap = Intent(context, MainActivity::class.java)
-                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                .putExtra(EXTRA_SEND_ID, sendId)
-                .putExtra(EXTRA_ROUTE_KEY, Routes.sanitize(routeKey))
-            val pending = PendingIntent.getActivity(context, requestCode, tap, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            val open = PendingIntent.getActivity(
+                context, 0, Intent(context, MainActivity::class.java).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
             val notification = NotificationCompat.Builder(context, context.getString(R.string.push_channel_id))
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(title)
                 .setContentText(body)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setContentIntent(pending)
+                .setContentIntent(open)
                 .setAutoCancel(true)
                 .build()
-            context.getSystemService(NotificationManager::class.java).notify(requestCode, notification)
+            context.getSystemService(NotificationManager::class.java).notify(System.currentTimeMillis().toInt(), notification)
         }
     }
 }

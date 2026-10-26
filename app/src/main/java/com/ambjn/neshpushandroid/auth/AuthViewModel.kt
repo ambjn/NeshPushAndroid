@@ -9,7 +9,6 @@ import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ambjn.neshpushandroid.R
-import com.ambjn.neshpushandroid.push.DeviceRegistrar
 import com.google.android.gms.tasks.Task
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -70,8 +69,6 @@ class AuthViewModel : ViewModel() {
 
     fun signOut(context: Context) {
         viewModelScope.launch {
-            // Revoke this installation while the ID token is still obtainable.
-            DeviceRegistrar.revoke(context.applicationContext)
             auth.signOut()
             // Forget the chosen account so the next sign-in shows the picker again.
             runCatching { CredentialManager.create(context).clearCredentialState(ClearCredentialStateRequest()) }
