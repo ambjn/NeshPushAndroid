@@ -73,7 +73,7 @@ object DeviceRegistrar {
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
-    private suspend fun post(path: String, idToken: String, body: JSONObject) = withContext(Dispatchers.IO) {
+    internal suspend fun post(path: String, idToken: String, body: JSONObject) = withContext(Dispatchers.IO) {
         val base = BuildConfig.API_BASE_URL.ifEmpty { error("API_BASE_URL not configured") }
         val conn = URL(base + path).openConnection() as HttpURLConnection
         try {
