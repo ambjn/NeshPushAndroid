@@ -4,9 +4,14 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.appdistribution)
 }
 
 android {
+    // Local config lives in the gitignored .env at the repo root (see .env.example).
+    val env = Properties().apply {
+        rootProject.file(".env").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+    }
     namespace = "com.ambjn.neshpushandroid"
     compileSdk {
         version = release(37)
@@ -21,14 +26,19 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Secrets live in the gitignored .env at the repo root (see .env.example).
-        val env = Properties().apply {
-            rootProject.file(".env").takeIf { it.exists() }?.inputStream()?.use { load(it) }
-        }
         buildConfigField("String", "API_BASE_URL", "\"${env.getProperty("API_BASE_URL", "")}\"")
     }
 
     buildTypes {
+        debug {
+            // Firebase App Distribution: ./gradlew appDistributionUploadDebug
+            // Credentials and testers come from the gitignored .env (see .env.example).
+            firebaseAppDistribution {
+                serviceCredentialsFile = env.getProperty("FIREBASE_SERVICE_ACCOUNT_FILE", "")
+                testers = env.getProperty("APP_DISTRIBUTION_TESTERS", "")
+                releaseNotes = "Nerd Push debug build"
+            }
+        }
         release {
             optimization {
                 enable = true
