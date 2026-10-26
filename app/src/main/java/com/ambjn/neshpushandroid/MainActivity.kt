@@ -24,7 +24,7 @@ import com.ambjn.neshpushandroid.push.DeviceRegistrar
 import com.ambjn.neshpushandroid.push.NotificationsService
 import com.ambjn.neshpushandroid.push.PushMessage
 import com.ambjn.neshpushandroid.push.Route
-import com.ambjn.neshpushandroid.ui.theme.NeshPushAndroidTheme
+import com.ambjn.neshpushandroid.ui.theme.NerdPushTheme
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
         handleIncomingIntent(intent)
         setContent {
-            NeshPushAndroidTheme {
+            NerdPushTheme {
                 val vm: AuthViewModel = viewModel()
                 val user by vm.user.collectAsState()
                 val loading by vm.loading.collectAsState()

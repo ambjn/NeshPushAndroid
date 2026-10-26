@@ -17,9 +17,13 @@ import kotlin.coroutines.resumeWithException
 
 /** Sends this device's FCM token to the dashboard backend, authenticated with the user's Firebase ID token. */
 object DeviceRegistrar {
-    enum class State { Pending, Registered, Failed }
+    sealed class State {
+        data object Pending : State()
+        data object Registered : State()
+        data class Failed(val reason: String) : State()
+    }
 
-    private val _state = MutableStateFlow(State.Pending)
+    private val _state = MutableStateFlow<State>(State.Pending)
     val state: StateFlow<State> = _state
 
     /** No-op when signed out. */
@@ -30,7 +34,7 @@ object DeviceRegistrar {
             val fcmToken = FirebaseMessaging.getInstance().token.await()
             post(idToken, JSONObject().put("token", fcmToken).put("displayName", user.displayName))
             State.Registered
-        }.getOrElse { State.Failed }
+        }.getOrElse { State.Failed(it.message ?: it::class.simpleName ?: "unknown") }
     }
 
     private suspend fun post(idToken: String, body: JSONObject) = withContext(Dispatchers.IO) {
@@ -44,7 +48,7 @@ object DeviceRegistrar {
             conn.setRequestProperty("Content-Type", "application/json")
             conn.setRequestProperty("Authorization", "Bearer $idToken")
             conn.outputStream.use { it.write(body.toString().toByteArray()) }
-            if (conn.responseCode !in 200..299) error("HTTP ${conn.responseCode}")
+            if (conn.responseCode !in 200..299) error("HTTP ${conn.responseCode} from $base")
         } finally {
             conn.disconnect()
         }

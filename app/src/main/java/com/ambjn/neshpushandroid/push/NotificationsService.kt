@@ -38,7 +38,7 @@ object NotificationsService {
             .putExtras(push.toBundle())
         val pending = PendingIntent.getActivity(context, id, tap, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val notification = NotificationCompat.Builder(context, if (push.isMarketing) CHANNEL_OFFERS else CHANNEL_DEFAULT)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(push.title.ifBlank { context.getString(R.string.app_name) })
             .setContentText(push.message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
