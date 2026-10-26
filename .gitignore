@@ -16,3 +16,6 @@ local.properties
 
 # Firebase config (contains project API keys)
 google-services.json
+
+# Supabase keys (copy .env.example to .env)
+.env

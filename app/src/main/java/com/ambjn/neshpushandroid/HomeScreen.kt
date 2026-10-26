@@ -57,5 +57,8 @@ fun HomeScreen(user: FirebaseUser, onSignOut: () -> Unit, modifier: Modifier = M
         }
         Spacer(Modifier.height(32.dp))
         OutlinedButton(onClick = onSignOut) { Text("Sign out") }
+        Spacer(Modifier.height(32.dp))
+        Text("Todos", style = MaterialTheme.typography.labelLarge)
+        TodoList()
     }
 }
